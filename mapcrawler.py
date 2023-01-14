@@ -41,7 +41,7 @@ def displayMap():
     st.session_state["zoom"] = data["zoom"]
     return data
 
-df = pd.read_csv("/Users/snande/Personal/Projects/mapCrawler/worldcities.csv")
+df = pd.read_csv("worldcities.csv")
 
 if "lat" not in st.session_state:
     st.session_state["lat"] = 22.59

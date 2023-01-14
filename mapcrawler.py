@@ -28,7 +28,7 @@ def displayData(df):
 
 def displayMap():
     m = (folium.Map(location=[st.session_state["lat"], st.session_state["lng"]], 
-                zoom_start=st.session_state["zoom"]), tiles=None)
+                zoom_start=st.session_state["zoom"], tiles=None))
     tile = folium.TileLayer(
                             tiles = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
                             attr = 'Google',

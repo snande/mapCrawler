@@ -125,7 +125,7 @@ dependencies:
   - pyparsing
   - pyrsistent
   - pysocks
-  - python
+  - python=3.10.4
   - python-dateutil
   - python-fastjsonschema
   - python-tzdata
@@ -169,4 +169,3 @@ dependencies:
   - zipp
   - zlib
   - zstd
-

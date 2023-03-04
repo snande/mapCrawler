@@ -39,7 +39,7 @@ coordinates = ""
 
 def displayData(df):
     df = df.reset_index(drop=True)
-    for i in range(10):
+    for i in range(10 if len(df)>=10 else len(df)):
         name = df.loc[i, "Descrs"]
         link = "https://www.google.co.in/maps/search/" + df.loc[i, "Descrs"].replace(" ", "+")
         st.write(f"""{i+1}. [{name}]({link})  
@@ -58,11 +58,14 @@ def displayData(df):
             for i in range(len(imglinks)):
                 # cols[i].image(imglinks[i]+"=w200-h200-k-no")
                 r = requests.get(imglinks[i]+"=w150-h150-k-no")
-                img = Image.open(BytesIO(r.content))
-                width, height = img.size
-                resize_len = width if width >= height else height
-                img = img.resize((resize_len, resize_len))
-                cols[i].image(img)  
+                if r.status_code == 200:
+                    img = Image.open(BytesIO(r.content))
+                    width, height = img.size
+                    resize_len = width if width >= height else height
+                    img = img.resize((resize_len, resize_len))
+                    cols[i].image(img)
+                else:
+                    continue
 
 def displayMap():
     m = (folium.Map(location=[st.session_state["lat"], st.session_state["lng"]], 

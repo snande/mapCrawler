@@ -37,8 +37,7 @@ delta_lat = 0.027
 delta_long = delta_lat/np.cos(delta_lat*np.pi/180)
 coordinates = ""
 
-def displayData(df):
-    df = df.reset_index(drop=True)
+def displayBackend(df):
     for i in range(10 if len(df)>=10 else len(df)):
         name = df.loc[i, "Descrs"]
         link = "https://www.google.co.in/maps/search/" + df.loc[i, "Descrs"].replace(" ", "+")
@@ -51,8 +50,8 @@ def displayData(df):
             """)
         # link = "https://www.google.co.in/search?q=google+maps+" + df.iloc[i, 0].replace(" ", "+") + "&tbm=isch"
         # html_text = requests.get(link, headers=headers).text
-        imglinks = df.loc[i, "ImgLinks"].split(",")
-        imglinks = imglinks[:4]
+        imgstr = str(df.loc[i, "ImgLinks"])
+        imglinks = imgstr.split(",") if "," in str(df.loc[i, "ImgLinks"]) else []
         if len(imglinks) > 0:
             cols = st.columns(len(imglinks))
             for i in range(len(imglinks)):
@@ -66,6 +65,22 @@ def displayData(df):
                     cols[i].image(img)
                 else:
                     continue
+    
+
+def displayData(df):
+    
+    tab1, tab2 = st.tabs(["Best Places by Rating", "Best Places by Distance"])
+    
+    with tab1:
+        df = df.sort_values("Scaled Rating", ascending=False).reset_index(drop=True)
+        df.to_csv("result.csv", index=False)
+        displayBackend(df)
+        
+    with tab2:
+        df = df.sort_values("Scaled Dist Rating", ascending=False).reset_index(drop=True)
+        displayBackend(df)
+    
+    
 
 def displayMap():
     m = (folium.Map(location=[st.session_state["lat"], st.session_state["lng"]], 
@@ -81,6 +96,7 @@ def displayMap():
     data = st_folium(m, returned_objects=["center", "zoom"], height=400)
     st.session_state["zoom"] = data["zoom"]
     return data
+
 
 df = pd.read_csv("worldcities.csv")
 
@@ -238,10 +254,4 @@ if (coordinates != "") and (search_for != ""):
             _ = blob_client.upload_blob(keydict.to_json(), overwrite=True)
 
 
-        st.subheader("Best Places by Rating")
-        df = df.sort_values("Scaled Rating", ascending=False)
-        displayData(df)
-
-        st.subheader("Best Places by Distance")
-        df = df.sort_values("Scaled Dist Rating", ascending=False)
         displayData(df)

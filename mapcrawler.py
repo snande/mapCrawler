@@ -51,7 +51,7 @@ def displayBackend(df):
         # link = "https://www.google.co.in/search?q=google+maps+" + df.iloc[i, 0].replace(" ", "+") + "&tbm=isch"
         # html_text = requests.get(link, headers=headers).text
         imgstr = str(df.loc[i, "ImgLinks"])
-        imglinks = imgstr.split(",") if "," in str(df.loc[i, "ImgLinks"]) else []
+        imglinks = imgstr.split(",")[:4] if "," in str(df.loc[i, "ImgLinks"]) else []
         if len(imglinks) > 0:
             cols = st.columns(len(imglinks))
             for i in range(len(imglinks)):

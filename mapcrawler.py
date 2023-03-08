@@ -69,7 +69,10 @@ def displayBackend(df):
 
 def displayData(df):
     
-    tab1, tab2 = st.tabs(["Best Places by Rating", "Best Places by Distance"])
+    tab1, tab2, tab3 = st.tabs(["Best Places by Rating", "Best Places by Distance", "Data"])
+    
+    with tab3:
+        st.dataframe(df)
     
     with tab1:
         df = df.sort_values("Scaled Rating", ascending=False).reset_index(drop=True)

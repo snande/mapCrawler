@@ -193,6 +193,8 @@ if (coordinates != "") and (search_for != ""):
                 html_text = requests.get(link, headers=headers).text
                     
                 startList = [m.start() for m in re.finditer(r"\d+ reviews", html_text)]
+                if len(startList) == 0:
+                    continue
                 strchunks = [html_text[startList[i]:startList[i+1]] for i in range(0, len(startList)-1)]
                 strchunks.append(html_text[startList[-1]:])
 

@@ -153,7 +153,7 @@ if (coordinates != "") and (search_for != ""):
         latitude = float(coordinates.split(",")[0])
         longitude = float(coordinates.split(",")[1])
 
-        search_for = search_for.strip().lower()
+        search_for = search_for.strip().lower().replace(" ", "+")
         
         keylist = (keydict.loc[(keydict["Search"]==search_for) & 
                            ((keydict["Latitude"]-latitude).abs() <= delta_lat) & 
@@ -173,8 +173,6 @@ if (coordinates != "") and (search_for != ""):
                                 ))
             
         if ((key == "None")):
-            
-            search_for = search_for.replace(" ", "+")
 
             latlonglist = [(latitude+i, longitude+j) for i in [k*delta_lat for k in range(-2, 3)] 
                     for j in [k*delta_long for k in range(-2, 3)]]

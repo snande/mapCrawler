@@ -5,3 +5,4 @@ pandas
 pillow
 folium
 streamlit_folium
+plotly-express

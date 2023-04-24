@@ -11,6 +11,7 @@ from io import BytesIO
 import time
 from azure.storage.blob import BlobServiceClient
 import logging
+import plotly.express as px
 
 
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
@@ -69,17 +70,25 @@ def displayBackend(df):
 
 def displayData(df):
     
-    tab1, tab2, tab3 = st.tabs(["Best Places by Rating", "Best Places by Distance", "Data"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Map View", "Best Places by Rating", "Best Places by Distance", "Data"])
     
-    with tab3:
+    with tab4:
         st.dataframe(df)
-    
+        
     with tab1:
+        fig = (px.scatter_mapbox(df, lat="Latitude", lon="Longitude", 
+                         color="Scaled Rating", 
+                         color_continuous_scale="ylorbr",
+                         text = df["Descrs"].str.split().str[:3].str.join(sep=" "),
+                         zoom=10, mapbox_style="carto-positron"))
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with tab2:
         df = df.sort_values("Scaled Rating", ascending=False).reset_index(drop=True)
         df.to_csv("result.csv", index=False)
         displayBackend(df)
         
-    with tab2:
+    with tab3:
         df = df.sort_values("Scaled Dist Rating", ascending=False).reset_index(drop=True)
         displayBackend(df)
     

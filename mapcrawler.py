@@ -73,7 +73,7 @@ def displayData(df):
     tab1, tab2, tab3, tab4 = st.tabs(["Map View", "Best Places by Rating", "Best Places by Distance", "Data"])
     
     with tab4:
-        st.dataframe(df)
+        st.dataframe(df.reset_index(drop=True))
         
     with tab1:
         fig = (px.scatter_mapbox(df, lat="Latitude", lon="Longitude", 

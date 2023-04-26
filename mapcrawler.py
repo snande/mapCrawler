@@ -34,10 +34,18 @@ headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 			"Connection":"close", 
 			"Upgrade-Insecure-Requests":"1"}
 zoom = 16.01
-delta_lat = 0.027
+delta_lat = 0.022
 delta_long = delta_lat/np.cos(delta_lat*np.pi/180)
 coordinates = ""
+clicked = False
+if 'refresh' not in st.session_state:
+    st.session_state.refresh = False
 
+
+def updateRefreshCallback():
+    st.session_state.refresh = True
+    
+    
 def displayBackend(df):
     for i in range(10 if len(df)>=10 else len(df)):
         name = df.loc[i, "Descrs"]
@@ -153,11 +161,13 @@ else:
 
 if (coordinates != "") and (search_for != ""):
 
-    st.text(f"Search for {search_for} near {coordinates}")
+    if (st.session_state.refresh == False):
+        st.text(f"Search for {search_for} near {coordinates}")
+        clicked = st.button("Search")
+    else:
+        st.text(f"Searching for {search_for} near {coordinates}")
 
-    clicked = st.button("Search")
-
-    if clicked == True:
+    if ((clicked == True) or (st.session_state.refresh == True)):
 
         latitude = float(coordinates.split(",")[0])
         longitude = float(coordinates.split(",")[1])
@@ -171,7 +181,7 @@ if (coordinates != "") and (search_for != ""):
         
         key = keylist.values[0] if len(keylist.values)>0 else "None"
         
-        if ((key != "None")):
+        if ((key != "None") and (st.session_state.refresh == False)):
             
             resultFileName = "projects/mapCrawler/data/result/"+key+".json"
             downlodData = container_client.download_blob(resultFileName).readall()
@@ -181,10 +191,15 @@ if (coordinates != "") and (search_for != ""):
                                        }
                                 ))
             
-        if ((key == "None")):
+            
+            displayData(df)
+            refresh = st.button("Refresh Data", on_click=updateRefreshCallback)
+            
+        if ((key == "None") or (st.session_state.refresh == True)):
 
-            latlonglist = [(latitude+i, longitude+j) for i in [k*delta_lat for k in range(-2, 3)] 
-                    for j in [k*delta_long for k in range(-2, 3)]]
+            st.session_state.refresh = False
+            latlonglist = [(latitude+i, longitude+j) for i in [k*delta_lat for k in range(-3, 4)] 
+                    for j in [k*delta_long for k in range(-3, 4)]]
 
             queryData = []
             loopcounter = 0
@@ -240,7 +255,7 @@ if (coordinates != "") and (search_for != ""):
                         continue
                     imglinks = ",".join([j for j in set(re.findall("https://lh5[^,\\\\]+", i)) if "/p/" in j])
                     queryData.append([descrs, rating, raters, loclat, loclong, imglinks])
-                loopcounter += 100/25
+                loopcounter += 100/49
                 progbar.progress(int(loopcounter))
 
                 
@@ -265,5 +280,4 @@ if (coordinates != "") and (search_for != ""):
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=masterSearchFileName)
             _ = blob_client.upload_blob(keydict.to_json(), overwrite=True)
 
-
-        displayData(df)
+            displayData(df)

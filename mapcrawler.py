@@ -50,13 +50,18 @@ def displayBackend(df):
     for i in range(10 if len(df)>=10 else len(df)):
         name = df.loc[i, "Descrs"]
         link = "https://www.google.co.in/maps/search/" + df.loc[i, "Descrs"].replace(" ", "+")
-        st.write(f"""{i+1}. [{name}]({link})  
-            **Actual Rating** : {df.loc[i, "Rating"]}  
-            **Raters** : {df.loc[i, "Raters"]}  
-            **Scaled Rating** : {round(df.loc[i, "Scaled Rating"], 2)}  
-            **Distance Scaled Rating** : {round(df.loc[i, "Scaled Dist Rating"], 2)}  
-            **Displacement** : {round(df.loc[i, "Dist"], 2)}  
-            """)
+        st.write(f"""{i+1}. [{name}]({link})""")
+        col0, col1, col2 = st.columns([1, 5, 5])
+        col1.write(f"""**Actual Rating** : {df.loc[i, "Rating"]}  
+                    **Raters** : {df.loc[i, "Raters"]}  
+                    **Scaled Rating** : {round(df.loc[i, "Scaled Rating"], 2)}  
+                    **Distance Scaled Rating** : {round(df.loc[i, "Scaled Dist Rating"], 2)}  
+                    """)
+        col2.write(f"""**Displacement** : {round(df.loc[i, "Dist"], 2)}  
+                    **Price** : {df.loc[i, "Price"]}  
+                    **Value for Money** : {round(df.loc[i, "VFM"], 2)}  
+                    **Composite Rating** : {round(df.loc[i, "Composite"], 2)}  
+                   """)
         # link = "https://www.google.co.in/search?q=google+maps+" + df.iloc[i, 0].replace(" ", "+") + "&tbm=isch"
         # html_text = requests.get(link, headers=headers).text
         imgstr = str(df.loc[i, "ImgLinks"])
@@ -78,9 +83,14 @@ def displayBackend(df):
 
 def displayData(df):
     
-    tab1, tab2, tab3, tab4 = st.tabs(["Map View", "Best Places by Rating", "Best Places by Distance", "Data"])
+    if "Price" not in df.columns:
+        return
     
-    with tab4:
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Map View", "Best Places by Rating", "Best Places by Distance", 
+                                                  "Best Places by Value for Money", "Best Places by Composite Rating", 
+                                                  "Data"])
+    
+    with tab6:
         st.dataframe(df.reset_index(drop=True))
         
     with tab1:
@@ -93,13 +103,19 @@ def displayData(df):
     
     with tab2:
         df = df.sort_values("Scaled Rating", ascending=False).reset_index(drop=True)
-        df.to_csv("result.csv", index=False)
         displayBackend(df)
         
     with tab3:
         df = df.sort_values("Scaled Dist Rating", ascending=False).reset_index(drop=True)
         displayBackend(df)
-    
+        
+    with tab4:
+        df = df.sort_values("VFM", ascending=False).reset_index(drop=True)
+        displayBackend(df)
+        
+    with tab5:
+        df = df.sort_values("Composite", ascending=False).reset_index(drop=True)
+        displayBackend(df)
     
 
 def displayMap():
@@ -187,7 +203,8 @@ if (coordinates != "") and (search_for != ""):
             downlodData = container_client.download_blob(resultFileName).readall()
             df = (pd.read_json(BytesIO(downlodData), 
                                 dtype={"Descrs":str,"Rating":float,"Raters":int, "Latitude":float,"Longitude":float,
-                                       "ImgLinks":str,"Scaled Rating":float,"Dist":float,"Scaled Dist Rating":float
+                                       "ImgLinks":str,"Scaled Rating":float,"Dist":float,"Scaled Dist Rating":float,
+                                       "Price":int, "VFM":float, "Composite":float
                                        }
                                 ))
             
@@ -228,6 +245,19 @@ if (coordinates != "") and (search_for != ""):
                     rating = float(chunckedlist[6])
                     if rating < 4.0:
                         continue
+                    
+                    price1 = re.findall("₹(?:\d+[,\d]*)", i)
+                    price1 = int(price1[0].replace("₹", '').replace(",", "")) if len(price1) > 0 else -1
+                    if "Inexpensive" in i[:200]:
+                        price2 = 200
+                    elif "Moderately expensive" in i[:200]:
+                        price2 = 400
+                    elif "Expensive" in i[:200]:
+                        price2 = 600
+                    elif "Very expensive" in i[:200]:
+                        price2 = 1200
+                    else:
+                        price2 = -1
 
                     name = ""
                     prevname = ""
@@ -254,12 +284,12 @@ if (coordinates != "") and (search_for != ""):
                     if ((abs(abs(loclat)-abs(latitude)) > 0.1) or (abs(abs(loclong)-abs(longitude)) > 0.1)):
                         continue
                     imglinks = ",".join([j for j in set(re.findall("https://lh5[^,\\\\]+", i)) if "/p/" in j])
-                    queryData.append([descrs, rating, raters, loclat, loclong, imglinks])
+                    queryData.append([descrs, rating, raters, loclat, loclong, imglinks, price1, price2])
                 loopcounter += 100/49
                 progbar.progress(int(loopcounter))
 
                 
-            df = pd.DataFrame(queryData, columns=['Descrs', 'Rating', 'Raters', 'Latitude', 'Longitude', 'ImgLinks'])
+            df = pd.DataFrame(queryData, columns=['Descrs', 'Rating', 'Raters', 'Latitude', 'Longitude', 'ImgLinks', 'price1', 'price2'])
             df = df.drop_duplicates(subset=['Descrs', 'Rating', 'Raters', 'Latitude', 'Longitude'])
 
             df['Scaled Rating'] = df['Rating']*(1 - np.power(1.25, -1*np.sqrt(df['Raters'])))
@@ -268,6 +298,18 @@ if (coordinates != "") and (search_for != ""):
                     (((df['Longitude']-longitude)*np.cos(latitude*0.0174)*111.3188)**2)))
 
             df["Scaled Dist Rating"] = df["Scaled Rating"]*(1 - np.power(1.25, -11.1/df["Dist"]))
+            
+            if (df["price1"] == -1).sum() > (df["price2"] == -1).sum():
+                df = df.drop("price1", axis=1).rename(columns={"price2":"Price"})
+            else:
+                df = df.drop("price2", axis=1).rename(columns={"price1":"Price"})
+                
+            df["Price"] = df["Price"].replace(-1, pd.NA)
+            price_fill = df["Price"].median(skipna=True)
+            df["Price"] = df["Price"].fillna(1 if np.isnan(price_fill) else price_fill)
+            
+            df['VFM'] = (df['Scaled Rating']/(df['Scaled Rating'].median()))*(np.sqrt(df['Price'].median()))/np.sqrt(df['Price'])
+            df['Composite'] = ((df['Scaled Rating']/(df['Scaled Rating'].median())) * (np.sqrt(df['VFM'])/(np.sqrt(df['VFM'].median()))))
 
             key = str(restime).split(".")[0]
             keydict.loc[len(keydict), ["Search", "Latitude", "Longitude", "Time", "Key"]] = [search_for, latitude, longitude, restime, key]

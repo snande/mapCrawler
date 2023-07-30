@@ -83,9 +83,6 @@ def displayBackend(df):
 
 def displayData(df):
     
-    if "Price" not in df.columns:
-        return
-    
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Map View", "Best Places by Rating", "Best Places by Distance", 
                                                   "Best Places by Value for Money", "Best Places by Composite Rating", 
                                                   "Data"])
@@ -208,8 +205,10 @@ if (coordinates != "") and (search_for != ""):
                                        }
                                 ))
             
-            
-            displayData(df)
+            if set(df.columns) == set(["Descrs", "Rating", "Raters", "Latitude", "Longitude", "ImgLinks",
+                                       "Scaled Rating", "Dist", "Scaled Dist Rating", "Price", "VFM",
+                                       "Composite"]):
+                displayData(df)
             refresh = st.button("Refresh Data", on_click=updateRefreshCallback)
             
         if ((key == "None") or (st.session_state.refresh == True)):

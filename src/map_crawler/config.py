@@ -43,7 +43,7 @@ class ScraperSettings(BaseModel):
     retries: int = Field(3, description="Number of retries for failed requests")
     # delta_lat of 0.022 is approximately 2.5km, suitable for local search grids.
     delta_lat: float = Field(0.022, description="Latitude step for grid generation")
-    max_scrolls: int = Field(3, description="Maximum number of scrolls to load results")
+    max_scrolls: int = Field(4, description="Maximum number of scrolls to load results")
     scroll_timeout: int = Field(3000, description="Timeout in milliseconds to wait after scrolling")
 
     # Headers

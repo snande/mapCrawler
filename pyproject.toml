@@ -1,0 +1,83 @@
+[project]
+name = "map-crawler"
+version = "0.1.0"
+description = "A structured Streamlit application for scraping and visualizing map data."
+authors = [
+    {name = "Satish Nande", email = "satishnande23@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+repository = "https://github.com/snande/mapCrawler"
+dependencies = [
+    "streamlit (>=1.41.0,<2.0.0)",
+    "pandas (>=2.2.0,<3.0.0)",
+    "requests (>=2.31.0,<3.0.0)",
+    "numpy (>=1.26.0,<3.0.0)",
+    "folium (>=0.19.0,<1.0.0)",
+    "streamlit-folium (>=0.24.0,<1.0.0)",
+    "pillow (>=11.0.0,<12.0.0)",
+    "azure-storage-blob (>=12.24.0,<13.0.0)",
+    "plotly (>=6.0.0,<7.0.0)",
+    "pydantic (>=2.10.0,<3.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)",
+    "playwright (>=1.57.0,<2.0.0)",
+    "pytest-playwright (>=0.7.2,<0.8.0)",
+]
+
+[project.scripts]
+map-crawler = "map_crawler.frontend.app:main"
+
+[tool.poetry]
+packages = [{include = "map_crawler", from = "src"}]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.0"
+mypy = "^1.14.0"
+pre-commit = "^4.0.0"
+types-requests = "^2.31.0"
+pandas-stubs = "^2.2.0"
+pytest = "^8.3.0"
+ipykernel = "^7.1.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".mypy_cache",
+    ".rpt_cache",
+    "dist",
+]
+
+[tool.ruff.lint]
+extend-select = ["E", "F", "W", "I", "B", "UP", "SIM", "N", "D"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["map_crawler"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = false
+suppress-none-returning = true
+allow-star-arg-any = false
+ignore-fully-untyped = false
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/map_crawler", "tests"]
+strict = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]

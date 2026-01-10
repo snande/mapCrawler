@@ -2,6 +2,7 @@
 
 import asyncio
 import concurrent.futures
+import subprocess
 import sys
 import urllib.parse
 from pathlib import Path
@@ -10,19 +11,41 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+
+@st.cache_resource
+def install_playwright_browsers() -> None:
+    """Installs Playwright browsers if they are missing."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+    try:
+        logger.info("Attempting to install Playwright browsers (chromium)...")
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        logger.info("Playwright browsers installed successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error installing Playwright browsers: {e.stderr}")
+    except Exception as e:
+        logger.error(f"Unexpected error installing Playwright browsers: {e}")
+
+
 # Fix for Playwright on Windows: Force ProactorEventLoop
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-from map_crawler.backend.service import MapCrawlerService
-from map_crawler.config import Settings, get_settings
-from map_crawler.frontend.components import (
+from map_crawler.backend.service import MapCrawlerService  # noqa: E402
+from map_crawler.config import Settings, get_settings  # noqa: E402
+from map_crawler.frontend.components import (  # noqa: E402
     create_scatter_map,
     display_map,
     fetch_and_resize_image,
     render_location_selector,
 )
-from map_crawler.logger import configure_logging
+from map_crawler.logger import configure_logging  # noqa: E402
 
 # --- Configuration Loading ---
 
@@ -365,6 +388,7 @@ def _main_app_logic() -> None:
     """Core logic for the Streamlit application."""
     st.set_page_config(layout="wide", page_title="Map Crawler")
     configure_logging()
+    install_playwright_browsers()
     st.title("Map Crawler Refactored")
 
     # --- Initialization ---

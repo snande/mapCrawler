@@ -379,6 +379,24 @@ class GoogleMapsScraper:
         data = [p.model_dump(by_alias=True) for p in places]
         df = pd.DataFrame(data)
 
+        return self._process_results_dataframe(df, center_lat, center_long)
+
+    def _process_results_dataframe(
+        self, df: pd.DataFrame, center_lat: float, center_long: float
+    ) -> pd.DataFrame:
+        """Process a DataFrame of place data to calculate metrics.
+
+        Args:
+            df: DataFrame containing raw place data.
+            center_lat: Latitude of the search center.
+            center_long: Longitude of the search center.
+
+        Returns:
+            pd.DataFrame: Processed DataFrame with additional metric columns.
+        """
+        if df.empty:
+            return df
+
         # Remove duplicates based on key attributes to ensure uniqueness
         subset_cols = ["description", "rating", "raters", "latitude", "longitude"]
         existing_subset = [c for c in subset_cols if c in df.columns]

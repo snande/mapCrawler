@@ -17,6 +17,7 @@ import pandas as pd
 from map_crawler.backend.scraper import GoogleMapsScraper
 from map_crawler.backend.storage import AzureStorage
 from map_crawler.config import Settings
+from map_crawler.utils import generate_lat_long_grid
 
 # Create a module-level logger
 logger = logging.getLogger(__name__)
@@ -65,24 +66,95 @@ class MapCrawlerService:
     ) -> tuple[pd.DataFrame, bool]:
         """Search for places matching the term at the given coordinates.
 
-        The method first checks the persistent cache for existing results within
-        the configured spatial delta. If found and valid, cached data is return.
-        Otherwise, it triggers a live scrape.
+        Supports multi-tile searching if grid_size > 1. It will generate a grid
+        of coordinates around the center and perform searches for each.
 
         Args:
-            term: The search term (e.g., "restaurants").
+            term: The search term.
             lat: Latitude of the search center.
             lng: Longitude of the search center.
             force_refresh: If True, bypass cache and force a new scrape.
             progress_callback: Optional callback for progress updates.
 
         Returns:
-            A tuple containing:
-                - pd.DataFrame: The search results.
-                - bool: True if data was served from cache, False otherwise.
+            A tuple containing the aggregated DataFrame and a boolean indicating
+            if ALL results were from cache.
         """
         search_query = term.strip().lower().replace(" ", "+")
 
+        # Calculate longitude delta based on center latitude
+        cos_lat = np.cos(np.radians(lat))
+        delta_long = self.delta_lat / max(abs(cos_lat), 1e-6)
+
+        radius = self.settings.scraper.grid_radius
+
+        # Use the utility function to generate the grid
+        coords = generate_lat_long_grid(
+            center_lat=lat,
+            center_lon=lng,
+            lat_step=self.delta_lat,
+            lon_step=delta_long,
+            grid_radius=radius,
+        )
+
+        results_list = []
+        all_cached = True
+        num_tiles = len(coords)
+
+        for idx, (t_lat, t_lng) in enumerate(coords):
+
+            def tile_progress(p: float, current_idx: int = idx) -> None:
+                if progress_callback:
+                    scaled_p = (current_idx + p) / num_tiles
+                    progress_callback(min(scaled_p, 1.0))
+
+            df, cached = self._search_single_tile(
+                search_query, t_lat, t_lng, force_refresh, tile_progress
+            )
+
+            if not cached:
+                all_cached = False
+            if not df.empty:
+                results_list.append(df)
+
+        if not results_list:
+            return pd.DataFrame(), all_cached
+
+        # Aggregate and deduplicate
+        final_df = pd.concat(results_list, ignore_index=True)
+        # Deduplicate based on description and approximate coordinates
+        final_df["lat_round"] = final_df["latitude"].round(4)
+        final_df["lng_round"] = final_df["longitude"].round(4)
+        final_df = final_df.drop_duplicates(subset=["description", "lat_round", "lng_round"])
+        final_df = final_df.drop(columns=["lat_round", "lng_round"])
+
+        # Re-calculate distance and VFM metrics relative to the global search center.
+        # This overrides tile-relative metrics calculated during individual scrapes, ensuring
+        # consistency across the aggregated dataset.
+
+        return self.scraper._process_results_dataframe(final_df, lat, lng), all_cached
+
+    def _search_single_tile(
+        self,
+        search_query: str,
+        lat: float,
+        lng: float,
+        force_refresh: bool,
+        progress_callback: Callable[[float], Any] | None = None,
+    ) -> tuple[pd.DataFrame, bool]:
+        """Perform search for a single tile (cache check + scrape).
+
+        Args:
+            search_query: The search query string.
+            lat: Latitude of the tile center.
+            lng: Longitude of the tile center.
+            force_refresh: Whether to force a fresh scrape.
+            progress_callback: Optional callback for progress reporting.
+
+        Returns:
+            A tuple containing the results DataFrame and a boolean indicating if
+            the results were fetched from cache.
+        """
         # 1. Attempt to retrieve from cache
         if not force_refresh:
             cached_key = self._find_cached_key(search_query, lat, lng)
@@ -91,13 +163,14 @@ class MapCrawlerService:
                 try:
                     df = self._load_from_cache(cached_key)
                     if self._validate_dataframe(df):
+                        if progress_callback:
+                            progress_callback(1.0)
                         return df, True
                     logger.warning(
                         f"Cached data for key '{cached_key}' is invalid/empty. Re-crawling."
                     )
                 except Exception as exception:
                     logger.error(f"Failed to load cache for key '{cached_key}': {exception}")
-                    # Fallback to scrape on cache failure
 
         # 2. Scrape live data
         logger.info(f"Scraping live data for query='{search_query}' at ({lat}, {lng})")

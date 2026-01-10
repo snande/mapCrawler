@@ -44,6 +44,8 @@ class ScraperSettings(BaseModel):
     # delta_lat of 0.022 is approximately 2.5km, suitable for local search grids.
     delta_lat: float = Field(0.022, description="Latitude step for grid generation")
     max_scrolls: int = Field(4, description="Maximum number of scrolls to load results")
+    # Radius of 1 = 3x3 grid (center + 1 neighbors). Radius of 0 = 1x1 (single tile).
+    grid_radius: int = Field(3, description="Grid radius for search area (0=1x1, 1=3x3, etc.)")
     scroll_timeout: int = Field(3000, description="Timeout in milliseconds to wait after scrolling")
 
     # Headers

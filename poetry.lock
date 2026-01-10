@@ -2827,14 +2827,14 @@ snowflake = ["snowflake-connector-python (>=3.3.0) ; python_version < \"3.12\"",
 
 [[package]]
 name = "streamlit-folium"
-version = "0.21.0"
+version = "0.26.1"
 description = "Render Folium objects in Streamlit"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "streamlit_folium-0.21.0-py3-none-any.whl", hash = "sha256:6781338aa5e2e479d75be0afe81155e00cf6821d91e92d4838c2608857ff977e"},
-    {file = "streamlit_folium-0.21.0.tar.gz", hash = "sha256:114868c4daf85d8c725ac45d6ad1f1a54f728fa1fa2f7a1e772700adc13cba19"},
+    {file = "streamlit_folium-0.26.1-py3-none-any.whl", hash = "sha256:81c369b89475fa13cb95a5bb7ea548d8aee1ea081b25b03df1e7b057d186c77d"},
+    {file = "streamlit_folium-0.26.1.tar.gz", hash = "sha256:e2bcc9fe3d16801d7f29f1309801145f6a3fedebb23f1950bc920b058b61b072"},
 ]
 
 [package.dependencies]
@@ -3097,4 +3097,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "d1f8bfc2e0df84fe255f707bc724efbe809db75a5d15300f164a77a292f053e8"
+content-hash = "43e9d96bf31e9b9e627b3315eee5b373a8f2808b3675b0130a390795cbdf9534"
